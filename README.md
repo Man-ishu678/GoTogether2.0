@@ -8,15 +8,15 @@ A modern and intuitive web application built using **Node.js + Express** (backen
 
 ## 🌟 **Features**
 
-✅ Beautiful Dark Theme with Gradient UI
-✅ Multi-page Routing (Landing → Book Ride / Post Ride → Ride Map)
-✅ TailwindCSS via CDN (no build process needed)
-✅ Smooth Transitions and Modern UX
-✅ Live Ride Map Integration with Google Maps / Alternative APIs
-✅ Booking confirmation with name & contact validation
-✅ Responsive design for desktop and mobile
-✅ Date & Time Picker for scheduling rides
-✅ Real-time seat availability updates
+*✅ Beautiful Dark Theme with Gradient UI
+*✅ Multi-page Routing (Landing → Book Ride / Post Ride → Ride Map)
+*✅ TailwindCSS via CDN (no build process needed)
+*✅ Smooth Transitions and Modern UX
+*✅ Live Ride Map Integration with Google Maps / Alternative APIs
+*✅ Booking confirmation with name & contact validation
+*✅ Responsive design for desktop and mobile
+*✅ Date & Time Picker for scheduling rides
+*✅ Real-time seat availability updates
 
 ---
 
