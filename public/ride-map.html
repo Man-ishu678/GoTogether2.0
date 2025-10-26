@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GoTogether — Map Booking</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.8/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+</head>
+<body class="page-center">
+  <main class="container">
+    <h2 class="gradient-text text-2xl font-bold mb-2">Ride Map & Booking</h2>
+    <a href="book.html" class="btn btn-gradient mb-4 inline-block">← Back to Book Ride</a>
+
+    <div id="map" style="height: 350px; border-radius:12px; border:2px solid #374151;"></div>
+
+    <div class="info-box">
+      <div class="mb-1"><strong>Pickup:</strong> <span id="pickupText">Loading...</span></div>
+      <div class="mb-1"><strong>Destination:</strong> <span id="destText">Loading...</span></div>
+      <div class="mb-1"><strong>Vehicle:</strong> <span id="vehicleText"></span></div>
+
+      <div class="mb-2">
+        <label for="vehicleType" class="small font-medium">Select Vehicle:</label>
+        <select id="vehicleType" class="w-full rounded px-2 py-1 mt-1">
+          <option value="bike">Bike</option>
+          <option value="car">Car</option>
+        </select>
+      </div>
+
+      <div class="mb-1"><strong>Distance:</strong> <span id="distanceText">-</span> km</div>
+      <div class="mb-1"><strong>Estimated Fare:</strong> ₹<span id="fareText">-</span></div>
+      <div class="mb-1"><strong>ETA:</strong> <span id="etaText">-</span> min</div>
+      <button id="confirmBtn" class="btn btn-gradient mt-4 w-full">Confirm Booking</button>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+  <script src="script.js"></script>
+
+  <script>
+    // Get params from URL
+    const params = new URLSearchParams(window.location.search);
+    const pickup = params.get('pickup') || "MG Road, Hyderabad";
+    const dest = params.get('dest') || "Hitech City, Hyderabad";
+    let vehicle = params.get('vehicle') || 'bike';
+
+    document.getElementById('pickupText').textContent = pickup;
+    document.getElementById('destText').textContent = dest;
+    document.getElementById('vehicleText').textContent = vehicle.charAt(0).toUpperCase() + vehicle.slice(1);
+
+    const vehicleTypeSelect = document.getElementById('vehicleType');
+    vehicleTypeSelect.value = vehicle;
+
+    const farePerKm = 7; 
+    const avgSpeed = 40; // km/h
+
+    // Initialize map
+    const map = L.map('map').setView([17.3850, 78.4867], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap contributors' }).addTo(map);
+
+    async function geocode(address){
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+      const data = await res.json();
+      if(data && data.length>0) return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+      return null;
+    }
+
+    function calculateFareAndETA(distanceKm){
+      let multiplier = vehicleTypeSelect.value === 'car' ? 1.5 : 1;
+      const fare = Math.ceil(distanceKm * farePerKm * multiplier);
+      const eta = Math.ceil(distanceKm / avgSpeed * 60);
+      document.getElementById('fareText').textContent = fare;
+      document.getElementById('etaText').textContent = eta;
+    }
+
+    vehicleTypeSelect.addEventListener('change', ()=>{
+      const distance = parseFloat(document.getElementById('distanceText').textContent);
+      if(!isNaN(distance)) calculateFareAndETA(distance);
+      document.getElementById('vehicleText').textContent = vehicleTypeSelect.value.charAt(0).toUpperCase()+vehicleTypeSelect.value.slice(1);
+    });
+
+    async function initRoute(){
+      const pickupLatLng = await geocode(pickup);
+      const destLatLng = await geocode(dest);
+
+      if(!pickupLatLng || !destLatLng) return alert("Could not find locations");
+
+      const control = L.Routing.control({
+        waypoints: [L.latLng(pickupLatLng[0], pickupLatLng[1]), L.latLng(destLatLng[0], destLatLng[1])],
+        routeWhileDragging:false,
+        addWaypoints:false,
+        draggableWaypoints:false,
+        show:false,
+        lineOptions: { styles:[{color:'cyan', weight:4}] }
+      }).addTo(map);
+
+      control.on('routesfound', function(e){
+        const route = e.routes[0];
+        const distanceKm = (route.summary.totalDistance/1000).toFixed(2);
+        document.getElementById('distanceText').textContent = distanceKm;
+        calculateFareAndETA(distanceKm);
+      });
+    }
+
+    // Booking
+    document.getElementById('confirmBtn').addEventListener('click', async()=>{
+      const riderName = prompt('Enter your name:');
+      if(!riderName) return;
+      const riderContact = prompt('Enter your contact:');
+
+      if(!riderContact) return;
+
+      try{
+        const res = await postBookingApi({
+          rideId: 'demo', // for demo, replace with actual ride._id if dynamic
+          riderName,
+          riderContact,
+          pickup,
+          dest,
+          vehicle: vehicleTypeSelect.value
+        });
+
+        if(res.ok){
+          alert('Booking confirmed!');
+          window.location.href='book.html';
+        } else {
+          const j = await res.json();
+          alert('Booking failed: ' + (j.error || res.statusText));
+        }
+      }catch(err){
+        alert('Booking failed: ' + err.message);
+      }
+    });
+
+
+    initRoute();
+  </script>
+</body>
+</html>
+

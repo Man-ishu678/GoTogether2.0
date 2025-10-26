@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Post Ride - GoTogether</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.8/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js"></script>
+</head>
+<body class="page-center">
+  <main class="container">
+    <h2 class="gradient-text text-2xl font-bold mb-2">Post a Ride</h2>
+    <div class="form-grid mb-4">
+      <input id="driverName" type="text" placeholder="Driver Name">
+      <input id="contact" type="text" placeholder="Contact">
+      <input id="pickup" type="text" placeholder="Pickup">
+      <input id="dest" type="text" placeholder="Destination">
+      <select id="vehicle">
+        <option value="bike">Bike</option>
+        <option value="car">Car</option>
+      </select>
+      <input id="seats" type="number" placeholder="Seats Available" value="1">
+    </div>
+    <button id="postRideBtn" class="btn btn-gradient w-full">Post Ride</button>
+    <a href="index.html" class="btn btn-secondary mt-2 w-full">Back</a>
+  </main>
+
+  <script>
+    document.getElementById('postRideBtn').addEventListener('click', async () => {
+      const driverName = document.getElementById('driverName').value.trim();
+      const contact = document.getElementById('contact').value.trim();
+      const pickup = document.getElementById('pickup').value.trim();
+      const dest = document.getElementById('dest').value.trim();
+      const vehicle = document.getElementById('vehicle').value;
+      const seatsAvailable = parseInt(document.getElementById('seats').value) || 1;
+
+      if(!driverName || !pickup || !dest) return alert("Please fill required fields");
+
+      try {
+        const res = await postRideApi({ driverName, contact, pickup, dest, vehicle, seatsAvailable });
+        if(res.ok){
+          alert("Ride posted successfully!");
+          window.location.href="book.html";
+        } else {
+          const j = await res.json();
+          alert("Failed to post ride: "+(j.error || res.statusText));
+        }
+      } catch(err){
+        alert("Error posting ride: "+err.message);
+      }
+    });
+  </script>
+</body>
+</html>
